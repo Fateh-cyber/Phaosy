@@ -1,0 +1,271 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>phaos.exe Recon</title>
+  <style>
+    * { box-sizing: border-box; }
+    body, html {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      font-family: "Courier New", monospace;
+      color: #33ff33;
+      overflow: hidden;
+    }
+    .centered {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      padding: 20px;
+    }
+    .terminal-window {
+      background-color: #111;
+      width: 850px;
+      max-width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 0 15px #00ff88;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .terminal-header {
+      background-color: #222;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .buttons {
+      display: flex;
+      gap: 8px;
+    }
+    .btn { width: 12px; height: 12px; border-radius: 50%; }
+    .btn.close { background-color: #ff5f56; }
+    .btn.min   { background-color: #ffbd2e; }
+    .btn.max   { background-color: #27c93f; }
+    .terminal-body {
+      padding: 20px;
+      white-space: pre-wrap;
+      font-size: 16px;
+      line-height: 1.5;
+      height: 300px;
+      overflow-y: auto;
+      background: #111;
+    }
+    .final-message {
+      color: #ffff66;
+      margin-top: 10px;
+      display: none;
+    }
+    #copy-btn, #see-more-btn {
+      margin: 15px 10px;
+      background-color: #000;
+      border: 1px solid #33ff33;
+      color: #33ff33;
+      padding: 8px 16px;
+      border-radius: 5px;
+      font-family: monospace;
+      cursor: pointer;
+    }
+    #copy-success {
+      margin-top: 10px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #0f0, #0a0);
+      color: #000;
+      font-weight: bold;
+      display: none;
+    }
+    #overlay, #video-screen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 1000;
+    }
+    #video-screen video {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -1;
+    }
+    .video-message {
+      color: #fff;
+      font-size: 24px;
+      text-shadow: 1px 1px 5px #000;
+      margin-bottom: 20px;
+      text-align: center;
+      max-width: 90%;
+    }
+    .buttons-choice {
+      display: flex;
+      gap: 20px;
+    }
+    .btn-no, .btn-yes {
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: monospace;
+    }
+    .btn-no {
+      background: linear-gradient(45deg, #ff4d4d, #b30000);
+      color: #fff;
+      position: relative;
+    }
+    .btn-yes {
+      background: #33ff33;
+      border: none;
+      color: #000;
+    }
+    #escape-msg {
+      margin-top: 15px;
+      color: #f66;
+      font-weight: bold;
+      display: none;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="centered" id="main-screen">
+  <div class="terminal-window">
+    <div class="terminal-header">
+      <div class="buttons">
+        <div class="btn close"></div>
+        <div class="btn min"></div>
+        <div class="btn max"></div>
+      </div>
+      <div style="color:#aaa;">terminal@phaos</div>
+    </div>
+    <div class="terminal-body" id="terminal-output"></div>
+    <div class="terminal-body final-message" id="final-message">→ If you like it, copy this.</div>
+  </div>
+  <div>
+    <button id="copy-btn">Copy</button>
+    <button id="see-more-btn">See more?</button>
+  </div>
+  <div id="copy-success">✅ Copied successfully!</div>
+</div>
+
+<!-- Overlay and video section -->
+<div id="overlay"></div>
+<div id="video-screen">
+  <video id="the-video" src="video.mp4" autoplay muted loop playsinline></video>
+  <div class="video-message">Are you still waiting? Go and paste what you copied.</div>
+  <div class="buttons-choice">
+    <button class="btn-no" id="no-btn">No</button>
+    <button class="btn-yes" id="yes-btn">Yes</button>
+  </div>
+  <div id="escape-msg">You can’t escape.</div>
+</div>
+
+<audio id="copy-sound" src="sound.mp3" preload="auto"></audio>
+
+<script>
+  const lines = [
+    "Initializing recon module...",
+    "Target detected: phaos.exe",
+    "Analyzing social media activity...",
+    " - Instagram: empty 90% highlights 10%",
+    "Scanning communication patterns...",
+    " - Frequent word: \"bruh\"",
+    " - Response time: averages between 0.3s and 3 business days",
+    "Checking emotional firewalls...",
+    " - Detected: sarcasm level = high",
+    " - Vulnerability: cute animals, movies and billie eilish",
+    "Gathering bio data...",
+    " - Real name: CLASSIFIED",
+    " - Age: somewhere between 15 and eternal",
+    " - Behavior: classic-neutral",
+    "Generating summary report...",
+    "Conclusion: classic, unpredictable, probably laughing right now.",
+    "Not perfect? Good. That means it's real."
+  ];
+
+  const output = document.getElementById("terminal-output");
+  const finalMessage = document.getElementById("final-message");
+  const overlay = document.getElementById("overlay");
+  const videoScreen = document.getElementById("video-screen");
+  const copySuccess = document.getElementById("copy-success");
+  const noBtn = document.getElementById("no-btn");
+  const yesBtn = document.getElementById("yes-btn");
+  const escapeMsg = document.getElementById("escape-msg");
+  const copySound = document.getElementById("copy-sound");
+
+  let index = 0;
+
+  function typeLine(line, callback) {
+    let i = 0;
+    const interval = setInterval(() => {
+      output.innerHTML += line[i];
+      output.scrollTop = output.scrollHeight;
+      i++;
+      if (i >= line.length) {
+        clearInterval(interval);
+        output.innerHTML += "\n";
+        output.scrollTop = output.scrollHeight;
+        callback();
+      }
+    }, 40);
+  }
+
+  function typeAllLines() {
+    if (index < lines.length) {
+      typeLine(lines[index], () => {
+        index++;
+        typeAllLines();
+      });
+    } else {
+      finalMessage.style.display = "block";
+    }
+  }
+
+  typeAllLines();
+
+  document.getElementById("copy-btn").onclick = () => {
+    const textToCopy = lines.join("\n");
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      copySuccess.style.display = "block";
+      copySound.play();
+    });
+  };
+
+  document.getElementById("see-more-btn").onclick = () => {
+    overlay.style.display = "flex";
+    setTimeout(() => {
+      overlay.style.display = "none";
+      videoScreen.style.display = "flex";
+    }, 3000);
+  };
+
+  noBtn.addEventListener("mouseover", () => {
+    const randX = Math.floor(Math.random() * 80) + 10;
+    const randY = Math.floor(Math.random() * 80) + 10;
+    noBtn.style.position = "absolute";
+    noBtn.style.top = randY + "%";
+    noBtn.style.left = randX + "%";
+  });
+
+  noBtn.onclick = () => {
+    escapeMsg.style.display = "block";
+  };
+
+  yesBtn.onclick = () => {
+    videoScreen.innerHTML = '<div class="video-message" style="font-size:32px;color:#0f0;">Thank you for the review.</div>';
+  };
+</script>
+</body>
+</html>
